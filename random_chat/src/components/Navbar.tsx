@@ -3,7 +3,12 @@ import React from 'react'
 import { motion } from 'motion/react'
 import { Sparkle } from 'lucide-react'
 
-const Navbar = () => {
+const Navbar = ({show}:{show:boolean}) => {
+
+    if (!show) {
+        return null;
+    }
+
     return (
         <motion.div
             initial={{y:-40, opacity:0}}

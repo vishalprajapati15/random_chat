@@ -33,12 +33,32 @@ io.on("connection", (socket) => {
             socket.to(partner).emit("matched", {roomId});
         }
         else {
-            waitingUser.push(socket.id)
+            waitingUser.push(socket.id);
+            socket.emit("waiting");
         }
-    })
+    });
 
+    socket.on("next",()=>{
+        handleLeave(socket.id);
+    });
+
+    function handleLeave(id) {
+        const index = waitingUser.indexOf(id);
+        const partner = activePairs.get(id);
+        
+        if (index !== -1) {
+            waitingUser.splice(index, 1);
+        }
+
+        if(partner){
+            io.to(partner).emit("partnerLeft");
+            activePairs.delete(id);
+            activePairs.delete(partner);
+        }
+    }
 
     socket.on("disconnect", () => {
+        handleLeave(socket.id);
         console.log("User disconnected");
     });
 });

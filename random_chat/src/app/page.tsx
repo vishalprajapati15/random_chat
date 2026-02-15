@@ -2,7 +2,7 @@
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { AnimatePresence, motion } from 'motion/react'
-import { LoaderPinwheel, Sparkle, Video } from 'lucide-react'
+import { Globe, LoaderPinwheel, Shuffle, Sparkle, Video } from 'lucide-react'
 import { io } from "socket.io-client";
 import { useEffect, useState } from "react";
 import VideoRoom from "@/components/VideoRoom";
@@ -23,6 +23,11 @@ export default function Home() {
     setStatus("waiting");
   }
 
+  const next = () => {
+    socket.emit("next");
+    window.location.reload();
+  }
+
   useEffect(() => {
     socket.on("matched", ({ roomId }) => {
       setRoomId(roomId);
@@ -30,12 +35,22 @@ export default function Home() {
       console.log("Room Id : ", roomId);
     });
 
-    return () => { socket.off("matched") }
+    socket.on("waiting", () => {
+      setStatus("waiting");
+    });
+
+    socket.on("partnerLeft", () => {
+      window.location.reload();
+    });
+
+    return () => {
+      socket.off();
+    }
   }, [])
 
   return (
     <>
-      <Navbar />
+      <Navbar show={status !== "chatting"} />
       <main className="relative w-full bg-linear-to-r from-black via-zinc-900 to-black text-white overflow-hidden">
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl" />
         <div className="absolute top-1/3 -right-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl" />
@@ -94,15 +109,37 @@ export default function Home() {
 
           {
             status === "chatting" && roomId && (
-              <div>
-                <VideoRoom roomId={roomId}/>
-              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.7 }}
+                className="fixed inset-0 flex flex-col bg-black z-20"
+              >
+                <div className="flex items-center justify-between px-4 sm:px-6 py-2 bg-black/50 backdrop-blur border-b border-white/10">
+                  <div className="flex items-center gap-2 text-zinc-400 text-sm">
+                    <Globe size={16} /> Random Chat | Connected
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.09 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-500 text-white font-medium cursor-pointer"
+                    onClick={next}
+                  >
+                    <Shuffle size={16} />
+                    Next
+                  </motion.button>
+                </div>
+                <div className="flex-1 relative">
+                  <VideoRoom roomId={roomId} />
+                </div>
+              </motion.div>
             )
           }
 
         </AnimatePresence>
       </main>
-      <Footer />
+      {status !== "chatting" && <Footer />}
     </>
   );
 }

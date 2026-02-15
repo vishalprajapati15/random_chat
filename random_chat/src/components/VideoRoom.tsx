@@ -39,7 +39,7 @@ const VideoRoom = ({ roomId }: { roomId: string }) => {
   }, [])
 
   return (
-    <div ref={containerRef} />
+    <div ref={containerRef} className="w-full h-[80vh]"/>
   )
 }
 
