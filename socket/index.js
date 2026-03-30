@@ -1,14 +1,25 @@
+import cors from 'cors';
+import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import { v4 as uuid } from 'uuid'
 import dotenv from 'dotenv';
+import healthRoutes from './routes/healthRoutes.js';
+
 dotenv.config();
 
-const server = http.createServer();
+const app = express();
+const server = http.createServer(app);
+
+// Use CORS for express
+app.use(cors()); // In production, add specific origin: app.use(cors({ origin: 'https://your-frontend-domain.com' }));
+
+app.use('/api', healthRoutes);
 
 const io = new Server(server, {
     cors: {
-        origin: "*"
+        origin: "*", // In production, replace with your frontend URL
+        methods: ["GET", "POST"]
     }
 });
 
