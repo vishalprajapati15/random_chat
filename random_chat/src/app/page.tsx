@@ -3,33 +3,27 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { AnimatePresence, motion } from 'motion/react'
 import { Globe, LoaderPinwheel, Shuffle, MessagesSquare, Video } from 'lucide-react'
-import { io } from "socket.io-client";
-import { useEffect, useState } from "react";
+import { io, Socket } from "socket.io-client";
+import { useEffect, useRef, useState } from "react";
 import VideoRoom from "@/components/VideoRoom";
-
-const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
-  transports: ["polling", "websocket"]
-});
-
-
 
 export default function Home() {
 
   const [status, setStatus] = useState("idle");
   const [roomId, setRoomId] = useState("");
-
-  const startChat = () => {
-    socket.emit("start");
-    setStatus("waiting");
-  }
-
-  const next = () => {
-    socket.emit("next");
-    window.location.reload();
-  }
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    socket.on("matched", ({ roomId }) => {
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
+      transports: ["polling", "websocket"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 20000,          // give Render extra time to wake up
+    });
+    socketRef.current = socket;
+
+    socket.on("matched", ({ roomId }: { roomId: string }) => {
       setRoomId(roomId);
       setStatus("chatting");
       console.log("Room Id : ", roomId);
@@ -43,10 +37,26 @@ export default function Home() {
       window.location.reload();
     });
 
+    // Debug helpers — remove after confirming prod works
+    socket.on("connect", () => console.log("Socket connected:", socket.id));
+    socket.on("disconnect", (reason) => console.warn("Socket disconnected:", reason));
+    socket.on("connect_error", (err) => console.error("Socket connect_error:", err.message));
+
     return () => {
       socket.off();
-    }
-  }, [])
+      socket.disconnect();
+    };
+  }, []);
+
+  const startChat = () => {
+    socketRef.current?.emit("start");
+    setStatus("waiting");
+  };
+
+  const next = () => {
+    socketRef.current?.emit("next");
+    window.location.reload();
+  };
 
   return (
     <>

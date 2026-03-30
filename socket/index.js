@@ -11,20 +11,26 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// Use CORS for express
-app.use(cors()); // In production, add specific origin: app.use(cors({ origin: 'https://your-frontend-domain.com' }));
 
+app.use(cors()); 
 app.use('/api', healthRoutes);
+
+const FRONTEND_URLS = process.env.FRONTEND_URLS
+    ? process.env.FRONTEND_URLS.split(",").map(url => url.trim())
+    : "*";
 
 const io = new Server(server, {
     cors: {
-        origin: "*", // In production, replace with your frontend URL
+        origin: FRONTEND_URLS,  
         methods: ["GET", "POST"]
-    }
+    },
+
+    pingInterval: 25000,
+    pingTimeout: 60000,
 });
 
 const waitingUser = [];
-const activePairs = new Map();  //[user: a:: user:b] && [user:b:: user:c]
+const activePairs = new Map();  
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
