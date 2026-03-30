@@ -36,7 +36,7 @@ io.on("connection", (socket) => {
     socket.on("start", () => {
         if (waitingUser.length > 0) {
             const partner = waitingUser.shift();
-            const roomId = uuid();
+            const roomId = uuid().replace(/-/g, "");
 
             activePairs.set(socket.id, partner);
             activePairs.set(partner, socket.id);

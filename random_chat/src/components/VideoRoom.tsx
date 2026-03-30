@@ -11,12 +11,13 @@ const VideoRoom = ({ roomId }: { roomId: string }) => {
     const start = async () => {
       const { ZegoUIKitPrebuilt } = await import("@zegocloud/zego-uikit-prebuilt");
 
-      const userId = crypto.randomUUID();
+      const userId = crypto.randomUUID().replace(/-/g, "");
+      const safeRoomId = roomId.replace(/-/g, "");
 
       const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
         Number(process.env.NEXT_PUBLIC_ZEGO_APP_ID),
         process.env.NEXT_PUBLIC_ZEGO_SERVER_SECRET ?? "",
-        roomId,
+        safeRoomId,
         userId,
         "stranger"
       );

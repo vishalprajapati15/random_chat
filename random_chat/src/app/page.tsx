@@ -7,8 +7,8 @@ import { io } from "socket.io-client";
 import { useEffect, useState } from "react";
 import VideoRoom from "@/components/VideoRoom";
 
-const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
-  transports: ["websocket"]
+const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
+  transports: ["polling", "websocket"]
 });
 
 
