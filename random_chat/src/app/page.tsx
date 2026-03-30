@@ -17,9 +17,9 @@ export default function Home() {
     const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
       transports: ["polling", "websocket"],
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 20000,          // give Render extra time to wake up
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1500,
+      timeout: 20000,
     });
     socketRef.current = socket;
 
@@ -34,11 +34,24 @@ export default function Home() {
     });
 
     socket.on("partnerLeft", () => {
-      window.location.reload();
+      setStatus("waiting");
+      // Re-enter the queue automatically rather than reloading
+      socket.emit("start");
     });
 
-    // Debug helpers — remove after confirming prod works
-    socket.on("connect", () => console.log("Socket connected:", socket.id));
+    // When the socket reconnects (e.g. after Render cold-start wakes up),
+    // re-emit "start" so the user doesn't get stuck waiting.
+    socket.on("connect", () => {
+      console.log("Socket connected:", socket.id);
+      setStatus(prev => {
+        if (prev === "waiting") {
+          console.log("Reconnected while waiting — re-emitting start");
+          socket.emit("start");
+        }
+        return prev;
+      });
+    });
+
     socket.on("disconnect", (reason) => console.warn("Socket disconnected:", reason));
     socket.on("connect_error", (err) => console.error("Socket connect_error:", err.message));
 
@@ -49,13 +62,14 @@ export default function Home() {
   }, []);
 
   const startChat = () => {
-    socketRef.current?.emit("start");
     setStatus("waiting");
+    socketRef.current?.emit("start");
   };
 
   const next = () => {
+    setStatus("waiting");
     socketRef.current?.emit("next");
-    window.location.reload();
+    // no page reload — server re-queues us and sends "waiting"
   };
 
   return (
